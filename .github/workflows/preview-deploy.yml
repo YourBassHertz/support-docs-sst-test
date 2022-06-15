@@ -1,0 +1,51 @@
+name: Preview Deploy
+
+on:
+  pull_request:
+    branches: [master]
+
+jobs:
+  deploy-preview:
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        node-version: [16.8]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: GitHub Refs
+        uses: rlespinasse/github-slug-action@v3.x
+
+      - name: Cache Node Modules
+        id: cache-node-modules-next
+        uses: actions/cache@v3
+        with:
+          path: |
+            "**/node_modules"
+            "**/.next/cache"
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install dependencies
+        if: steps.cache-node-modules-next.outputs.cache-hit != 'true'
+        run: npm install
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Serverless Stack Deploy
+        id: serverless-stack-deploy
+        run: npx sst deploy --stage ${{ env.GITHUB_EVENT_REF_SLUG_URL }}
+
+      #- name: Test
+      #  run: yarn turbo run test
