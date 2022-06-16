@@ -2,15 +2,17 @@ name: Preview Deploy
 
 on:
   pull_request:
-    branches: [master]
+    branches:
+      - "main"
+  workflow_dispatch:
 
 jobs:
   deploy-preview:
+    runs-on: ubuntu-latest
     timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest]
         node-version: [16.8]
 
     steps:
@@ -19,21 +21,28 @@ jobs:
       - name: GitHub Refs
         uses: rlespinasse/github-slug-action@v3.x
 
-      - name: Cache Node Modules
+      - name: Cache Node Modules & NextJS Cache
         id: cache-node-modules-next
         uses: actions/cache@v3
         with:
           path: |
-            "**/node_modules"
-            "**/.next/cache"
+            "**/node_modules/"
+            "**/.next/cache/"
+            "node_modules/"
+          # Generate a new cache whenever packages or source files change.
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**/frontend/*.js') }}
+          # If source files changed but packages didn't, rebuild from a prior cache.
+          restore-keys: |
+            ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-
 
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
-        with:
-          node-version: ${{ matrix.node-version }}
-
-      - name: Install dependencies
+      - name: Install SST dependencies
         if: steps.cache-node-modules-next.outputs.cache-hit != 'true'
+        working-directory: ./
+        run: npm install
+
+      - name: Install NextJS dependencies
+        if: steps.cache-node-modules-next.outputs.cache-hit != 'true'
+        working-directory: ./frontend
         run: npm install
 
       - name: Configure AWS Credentials
@@ -45,7 +54,4 @@ jobs:
 
       - name: Serverless Stack Deploy
         id: serverless-stack-deploy
-        run: npx sst deploy --stage ${{ env.GITHUB_EVENT_REF_SLUG_URL }}
-
-      #- name: Test
-      #  run: yarn turbo run test
+        run: npx sst deploy --stage ${{ env.GITHUB_REF_NAME_SLUG }}
