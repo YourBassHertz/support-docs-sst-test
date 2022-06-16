@@ -47,7 +47,7 @@ jobs:
 
       - name: Serverless Stack Deploy
         id: serverless-stack-deploy
-        run: npx sst deploy --stage ${{ env.GITHUB_EVENT_REF_SLUG_URL }}
+        run: npx sst deploy --stage ${{ env.GITHUB_REF_NAME_SLUG }}
 
       #- name: Test
       #  run: yarn turbo run test
