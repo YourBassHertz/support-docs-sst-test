@@ -37,10 +37,12 @@ jobs:
 
       - name: Install SST dependencies
         if: steps.cache-node-modules-next.outputs.cache-hit != 'true'
+        working-directory: ./
         run: npm install
 
       - name: Install NextJS dependencies
         if: steps.cache-node-modules-next.outputs.cache-hit != 'true'
+        working-directory: ./frontend
         run: cd frontend && npm install
 
       - name: Configure AWS Credentials
