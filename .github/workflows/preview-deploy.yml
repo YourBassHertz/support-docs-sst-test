@@ -21,7 +21,7 @@ jobs:
       - name: GitHub Refs
         uses: rlespinasse/github-slug-action@v3.x
 
-      - name: Cache Node Modules
+      - name: Cache Node Modules & NextJS Cache
         id: cache-node-modules-next
         uses: actions/cache@v3
         with:
@@ -38,10 +38,11 @@ jobs:
       - name: Install SST dependencies
         if: steps.cache-node-modules-next.outputs.cache-hit != 'true'
         run: npm install
+        working-directory: ./
 
       - name: Install NextJS dependencies
         run: npm install
-        working-directory: frontend
+        working-directory: ./frontend
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
