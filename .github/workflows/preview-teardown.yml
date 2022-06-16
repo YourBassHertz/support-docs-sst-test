@@ -1,9 +1,9 @@
-name: Preview Deploy
+name: Preview Teardown
 
 on:
-  pull_request:
-    branches:
-      - "main"
+  delete:
+    branches-ignore:
+      - main
   workflow_dispatch:
 
 jobs:
@@ -40,11 +40,6 @@ jobs:
         working-directory: ./
         run: npm install
 
-      - name: Install NextJS dependencies
-        if: steps.cache-node-modules-next.outputs.cache-hit != 'true'
-        working-directory: ./frontend
-        run: npm install
-
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -52,6 +47,5 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-      - name: Serverless Stack Deploy
-        id: serverless-stack-deploy
-        run: npx sst deploy --stage ${{ env.GITHUB_REF_NAME_SLUG }}
+      - name: SST Remove
+        run: npx sst remove --stage ${{ env.GITHUB_REF_NAME_SLUG }}
